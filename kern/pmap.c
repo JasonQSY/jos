@@ -181,6 +181,7 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
+	boot_map_region(kern_pgdir, UPAGES, n, PADDR(pages), PTE_U | PTE_P);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -193,6 +194,8 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
+	boot_map_region(kern_pgdir, KSTACKTOP - KSTKSIZE, KSTKSIZE,
+			PADDR(bootstack), PTE_W | PTE_P);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -202,6 +205,8 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+	boot_map_region(kern_pgdir, KERNBASE, (~0u) - KERNBASE + 1,
+			0, PTE_W | PTE_P);
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
@@ -375,13 +380,11 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 
 	// found
 	if (pde & PTE_P) {
-		// exist
 		return (pde_t *) KADDR(PTE_ADDR(pde)) + PTX(va);
 	}
 
 	// not found, create == true
 	if (create) {
-		// not exist
 		struct PageInfo *page = page_alloc(ALLOC_ZERO);
 
 		if (page == NULL) {
@@ -420,7 +423,7 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 			panic("page allocation fails");
 		}
 
-		*pte = new_va | perm | PTE_P;
+		*pte = (pa + offset) | perm | PTE_P;
 	}
 }
 
