@@ -47,9 +47,50 @@
  * Lab 3: Your code here for generating entry points for the different traps.
  */
 
+/*
+ * Whether an error code exists or not depends on the CPU.
+ * Refer to Chapter 5 of the Intel IA-32 Developer's Manual.
+ * There does not exist a simple rule.
+ */
 
+// processor defined
+TRAPHANDLER_NOEC(t_divide_handler, T_DIVIDE)
+TRAPHANDLER_NOEC(t_debug_handler, T_DEBUG)
+TRAPHANDLER_NOEC(t_nmi_handler, T_NMI)
+TRAPHANDLER_NOEC(t_brkpt_handler, T_BRKPT)
+TRAPHANDLER_NOEC(t_oflow_handler, T_OFLOW)
+TRAPHANDLER_NOEC(t_bound_handler, T_BOUND)
+TRAPHANDLER_NOEC(t_illop_handler, T_ILLOP)
+TRAPHANDLER_NOEC(t_device_handler, T_DEVICE)
+TRAPHANDLER(t_dblflt_handler, T_DBLFLT)
+TRAPHANDLER(t_tss_handler, T_TSS)
+TRAPHANDLER(t_segnp_handler, T_SEGNP)
+TRAPHANDLER(t_stack_handler, T_STACK)
+TRAPHANDLER(t_gpflt_handler, T_GPFLT)
+TRAPHANDLER(t_pgflt_handler, T_PGFLT)
+TRAPHANDLER_NOEC(t_fperr_handler, T_FPERR)
+TRAPHANDLER(t_align_handler, T_ALIGN)
+TRAPHANDLER_NOEC(t_mchk_handler, T_MCHK)
+TRAPHANDLER_NOEC(t_simderr_handler, T_SIMDERR)
+
+// user defined
+TRAPHANDLER_NOEC(t_syscall_handler, T_SYSCALL)
+//TRAPHANDLER_NOEC(t_default_handler, T_DEFAULT)
+//TRAPHANDLER_NOEC(irq_offset_handler, IRQ_OFFSET)
 
 /*
  * Lab 3: Your code here for _alltraps
  */
 
+_alltraps:
+	pushl %ds
+	pushl %es
+	pushal
+
+	movl $(GD_KD), %eax
+	movw %ax, %ds
+	movw %ax, %es
+
+	// call trap
+	pushl %esp
+	call trap
