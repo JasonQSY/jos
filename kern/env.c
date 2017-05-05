@@ -411,7 +411,7 @@ env_create(uint8_t *binary, enum EnvType type)
 
 	// allocate a new env
 	if (env_alloc(&env, 0) < 0) {
-		panic("env allocation falis");
+		panic("env allocation fails");
 	}
 
 	// load the named elf

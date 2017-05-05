@@ -91,7 +91,7 @@ trap_init(void)
 	SETGATE(idt[T_DIVIDE], false, GD_KT, t_divide_handler, 0);
 	SETGATE(idt[T_DEBUG], false, GD_KT, t_debug_handler, 0);
 	SETGATE(idt[T_NMI], false, GD_KT, t_nmi_handler, 0);
-	SETGATE(idt[T_BRKPT], false, GD_KT, t_brkpt_handler, 0);
+	SETGATE(idt[T_BRKPT], false, GD_KT, t_brkpt_handler, 3);
 	SETGATE(idt[T_OFLOW], false, GD_KT, t_oflow_handler, 0);
 	SETGATE(idt[T_BOUND], false, GD_KT, t_bound_handler, 0);
 	SETGATE(idt[T_ILLOP], false, GD_KT, t_illop_handler, 0);
@@ -106,6 +106,7 @@ trap_init(void)
 	SETGATE(idt[T_ALIGN], false, GD_KT, t_align_handler, 0);
 	SETGATE(idt[T_MCHK], false, GD_KT, t_mchk_handler, 0);
 	SETGATE(idt[T_SIMDERR], false, GD_KT, t_simderr_handler, 0);
+	SETGATE(idt[T_SYSCALL], false, GD_KT, t_syscall_handler, 3);
 
 	// Per-CPU setup
 	trap_init_percpu();
@@ -185,6 +186,36 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
 
+	// page fault
+	if (tf->tf_trapno == T_PGFLT) {
+		page_fault_handler(tf);
+		return;
+	}
+
+	// breakpoint exceptions
+	if (tf->tf_trapno == T_BRKPT) {
+		monitor(tf);
+		return;
+	}
+
+	// system call
+	if (tf->tf_trapno == T_SYSCALL) {
+		uint32_t num, a1, a2, a3, a4, a5;
+
+		num = tf->tf_regs.reg_eax;
+		a1 = tf->tf_regs.reg_edx;
+		a2 = tf->tf_regs.reg_ecx;
+		a3 = tf->tf_regs.reg_ebx;
+		a4 = tf->tf_regs.reg_edi;
+		a5 = tf->tf_regs.reg_esi;
+
+		if (syscall(num, a1, a2, a3, a4, a5) < 0) {
+			panic("invalid system call");
+		}
+
+		return;
+	}
+
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
@@ -245,6 +276,9 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
+	if (tf->tf_cs == 0) {
+		panic("kernel-mode page fault");
+	}
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
