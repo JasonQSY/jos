@@ -30,6 +30,21 @@ sched_yield(void)
 
 	// LAB 4: Your code here.
 
+	// find runnable env
+	for (int i = 0; i < NENV; i++) {
+		if (envs[i].env_status == ENV_RUNNABLE) {
+			env_run(&envs[i]);
+			panic("should not return");
+		}
+	}
+
+	// env previously running on this CPU is still running
+	if (thiscpu->cpu_env->env_status == ENV_RUNNING) {
+		env_run(thiscpu->cpu_env);
+		panic("should not return");
+	}
+
+	// no runnable envs
 	// sched_halt never returns
 	sched_halt();
 }

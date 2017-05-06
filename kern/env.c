@@ -574,6 +574,7 @@ env_run(struct Env *e)
 
 	// restore to env pgdir and drop into user mode
 	lcr3(PADDR(e->env_pgdir));
+	unlock_kernel();
 	env_pop_tf(&e->env_tf);
 
 	// the control flow won't reach here
